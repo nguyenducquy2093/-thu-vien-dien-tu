@@ -334,17 +334,18 @@ app.get('/api/debug/file/:id', async (req, res) => {
   try {
     const book = loadBooks().find(b => b.id === parseInt(req.params.id));
     if (!book) return res.json({ success: false, message: 'Book not found' });
-    const info = { id: book.id, cloudinaryPublicId: book.cloudinaryPublicId, fileUrl: book.fileUrl, cloudinaryResourceType: book.cloudinaryResourceType };
+    const info = { id: book.id, cloudinaryPublicId: book.cloudinaryPublicId, fileUrl: book.fileUrl, cloudinaryResourceType: book.cloudinaryResourceType, USE_CLOUDINARY };
     if (book.cloudinaryPublicId && USE_CLOUDINARY) {
       for (const rt of ['raw', 'image']) {
         try { const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt }); info['api_' + rt] = { found: true, url: r.secure_url, format: r.format, type: r.type, access_mode: r.access_mode, bytes: r.bytes }; } catch (e) { info['api_' + rt] = { found: false, error: e.message }; }
       }
-    }
-    if (book.fileUrl) {
-      try {
-        const testResp = await fetch(book.fileUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
-        info.fetchTest = { status: testResp.status, statusText: testResp.statusText, headers: Object.fromEntries(testResp.headers) };
-      } catch (e) { info.fetchTest = { error: e.message }; }
+      for (const rt of ['image', 'raw']) {
+        try {
+          const signedUrl = cloudinary.url(book.cloudinaryPublicId, { resource_type: rt, secure: true, sign_url: true, type: 'upload' });
+          const testResp = await fetch(signedUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
+          info['signed_' + rt] = { url: signedUrl, status: testResp.status, statusText: testResp.statusText, xCldError: (await testResp.headers.get('x-cld-error')) };
+        } catch (e) { info['signed_' + rt] = { error: e.message }; }
+      }
     }
     res.json({ success: true, data: info });
   } catch (err) { res.json({ success: false, message: err.message }); }
