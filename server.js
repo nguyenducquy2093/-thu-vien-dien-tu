@@ -341,9 +341,12 @@ app.get('/api/debug/file/:id', async (req, res) => {
       }
       for (const rt of ['image', 'raw']) {
         try {
-          const signedUrl = cloudinary.url(book.cloudinaryPublicId, { resource_type: rt, secure: true, sign_url: true, type: 'upload' });
-          const testResp = await fetch(signedUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
-          info['signed_' + rt] = { url: signedUrl, status: testResp.status, statusText: testResp.statusText, xCldError: (await testResp.headers.get('x-cld-error')) };
+          const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
+          if (r && r.secure_url) {
+            const signedUrl = cloudinary.url(r.public_id, { resource_type: rt, secure: true, sign_url: true, type: 'upload', version: r.version, format: r.format });
+            const testResp = await fetch(signedUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
+            info['signed_' + rt] = { url: signedUrl, status: testResp.status, statusText: testResp.statusText, xCldError: testResp.headers.get('x-cld-error') };
+          }
         } catch (e) { info['signed_' + rt] = { error: e.message }; }
       }
     }
@@ -372,9 +375,12 @@ app.get('/api/proxy/file/:id', async (req, res) => {
     if (book.cloudinaryPublicId && USE_CLOUDINARY) {
       for (const rt of ['image', 'raw']) {
         try {
-          const signedUrl = cloudinary.url(book.cloudinaryPublicId, { resource_type: rt, secure: true, sign_url: true, type: 'upload' });
-          const resp = await fetch(signedUrl, { signal: AbortSignal.timeout(10000) });
-          if (resp.ok) { url = signedUrl; break; }
+          const info = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
+          if (info && info.secure_url) {
+            const signedUrl = cloudinary.url(info.public_id, { resource_type: rt, secure: true, sign_url: true, type: 'upload', version: info.version, format: info.format });
+            const resp = await fetch(signedUrl, { signal: AbortSignal.timeout(10000) });
+            if (resp.ok) { url = signedUrl; break; }
+          }
         } catch {}
       }
     }
