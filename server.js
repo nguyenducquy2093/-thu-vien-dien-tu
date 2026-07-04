@@ -340,6 +340,12 @@ app.get('/api/debug/file/:id', async (req, res) => {
         try { const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt }); info['api_' + rt] = { found: true, url: r.secure_url, format: r.format, type: r.type, access_mode: r.access_mode, bytes: r.bytes }; } catch (e) { info['api_' + rt] = { found: false, error: e.message }; }
       }
     }
+    if (book.fileUrl) {
+      try {
+        const testResp = await fetch(book.fileUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
+        info.fetchTest = { status: testResp.status, statusText: testResp.statusText, headers: Object.fromEntries(testResp.headers) };
+      } catch (e) { info.fetchTest = { error: e.message }; }
+    }
     res.json({ success: true, data: info });
   } catch (err) { res.json({ success: false, message: err.message }); }
 });
