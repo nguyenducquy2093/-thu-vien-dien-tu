@@ -369,10 +369,11 @@ app.get('/api/proxy/file/:id', async (req, res) => {
 
     let url = null;
     if (book.cloudinaryPublicId && USE_CLOUDINARY) {
-      for (const rt of ['raw', 'image']) {
+      for (const rt of ['image', 'raw']) {
         try {
-          const info = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
-          if (info && info.secure_url) { url = info.secure_url; break; }
+          const signedUrl = cloudinary.url(book.cloudinaryPublicId, { resource_type: rt, secure: true, sign_url: true, type: 'upload' });
+          const resp = await fetch(signedUrl, { signal: AbortSignal.timeout(10000) });
+          if (resp.ok) { url = signedUrl; break; }
         } catch {}
       }
     }
