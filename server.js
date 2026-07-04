@@ -330,39 +330,45 @@ app.delete('/api/books/:id', requireRole('Admin', 'Giảng viên'), (req, res) =
   res.json({ success: true, message: 'Đã xóa tài liệu' });
 });
 
+app.get('/api/debug/file/:id', async (req, res) => {
+  try {
+    const book = loadBooks().find(b => b.id === parseInt(req.params.id));
+    if (!book) return res.json({ success: false, message: 'Book not found' });
+    const info = { id: book.id, cloudinaryPublicId: book.cloudinaryPublicId, fileUrl: book.fileUrl, cloudinaryResourceType: book.cloudinaryResourceType };
+    if (book.cloudinaryPublicId && USE_CLOUDINARY) {
+      for (const rt of ['raw', 'image']) {
+        try { const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt }); info['api_' + rt] = { found: true, url: r.secure_url, format: r.format }; } catch (e) { info['api_' + rt] = { found: false, error: e.message }; }
+      }
+    }
+    res.json({ success: true, data: info });
+  } catch (err) { res.json({ success: false, message: err.message }); }
+});
+
 // ---- Download proxy ----
 app.get('/api/download/:id', (req, res) => {
-  const book = loadBooks().find(b => b.id === parseInt(req.params.id));
-  if (!book) return res.status(404).json({ success: false, message: 'Không tìm thấy tài liệu' });
-  if (book.fileUrl) return res.redirect(book.fileUrl);
-  if (book.fileName) {
-    const fpath = path.join(UPLOAD_DIR, book.fileName);
-    if (fs.existsSync(fpath)) return res.download(fpath, book.originalName || book.fileName);
-  }
-  res.status(404).json({ success: false, message: 'File không tồn tại' });
-});
 
 app.get('/api/proxy/file/:id', async (req, res) => {
   try {
     const book = loadBooks().find(b => b.id === parseInt(req.params.id));
     if (!book || (!book.fileUrl && !book.cloudinaryPublicId)) return res.status(404).json({ success: false, message: 'File không tồn tại' });
 
-    let url = book.fileUrl;
+    let url = null;
     if (book.cloudinaryPublicId && USE_CLOUDINARY) {
-      const types = book.cloudinaryResourceType ? [book.cloudinaryResourceType, 'raw', 'image'] : ['raw', 'image'];
-      for (const rt of [...new Set(types)]) {
+      for (const rt of ['raw', 'image']) {
         try {
-          const u = cloudinary.url(book.cloudinaryPublicId, { resource_type: rt, secure: true, sign_url: true });
-          const resp = await fetch(u, { signal: AbortSignal.timeout(10000) });
-          if (resp.ok) { url = u; break; }
+          const info = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
+          if (info && info.secure_url) { url = info.secure_url; break; }
         } catch {}
       }
     }
+    if (!url) url = book.fileUrl;
+    if (!url) return res.status(404).json({ success: false, message: 'File không tồn tại' });
 
     const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
     if (!resp.ok) return res.status(502).json({ success: false, message: 'Không thể tải file từ Cloudinary' });
     const buf = Buffer.from(await resp.arrayBuffer());
     res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Content-Type', resp.headers.get('content-type') || 'application/octet-stream');
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.send(buf);
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
