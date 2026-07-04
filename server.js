@@ -346,6 +346,15 @@ app.get('/api/debug/file/:id', async (req, res) => {
 
 // ---- Download proxy ----
 app.get('/api/download/:id', (req, res) => {
+  const book = loadBooks().find(b => b.id === parseInt(req.params.id));
+  if (!book) return res.status(404).json({ success: false, message: 'Không tìm thấy tài liệu' });
+  if (book.fileUrl) return res.redirect(book.fileUrl);
+  if (book.fileName) {
+    const fpath = path.join(UPLOAD_DIR, book.fileName);
+    if (fs.existsSync(fpath)) return res.download(fpath, book.originalName || book.fileName);
+  }
+  res.status(404).json({ success: false, message: 'File không tồn tại' });
+});
 
 app.get('/api/proxy/file/:id', async (req, res) => {
   try {
