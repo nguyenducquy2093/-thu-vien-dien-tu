@@ -348,13 +348,66 @@ app.delete('/api/books/:id', requireRole('Admin', 'Giảng viên'), (req, res) =
 // ---- Download proxy ----
 const MIME_TYPES = { pdf:'application/pdf', doc:'application/msword', docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', xls:'application/vnd.ms-excel', xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', ppt:'application/vnd.ms-powerpoint', pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation', txt:'text/plain', epub:'application/epub+zip', html:'text/html' };
 
-app.get('/api/download/:id', (req, res) => {
+app.get('/api/view/:id', async (req, res) => {
+  try {
+    const book = loadBooks().find(b => b.id === parseInt(req.params.id));
+    if (!book) return res.status(404).json({ success: false, message: 'Không tìm thấy tài liệu' });
+    const contentType = MIME_TYPES[book.fileType] || 'application/octet-stream';
+    // Trường hợp lưu Cloudinary
+    if (book.fileUrl || book.cloudinaryPublicId) {
+      let url = book.fileUrl;
+      if (book.cloudinaryPublicId && USE_CLOUDINARY) {
+        for (const rt of ['image', 'raw']) {
+          try {
+            const info = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
+            if (info && info.secure_url) {
+              url = cloudinary.utils.private_download_url(info.public_id, info.format, { resource_type: rt, type: 'upload', attachment: false });
+              break;
+            }
+          } catch {}
+        }
+      }
+      if (!url) return res.status(404).json({ success: false, message: 'File không tồn tại' });
+      const resp = await fetch(url, { signal: AbortSignal.timeout(20000) });
+      if (!resp.ok) return res.status(502).json({ success: false, message: 'Không thể tải file từ nơi lưu trữ' });
+      const buf = Buffer.from(await resp.arrayBuffer());
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', 'inline');
+      return res.send(buf);
+    }
+    // Trường hợp lưu local disk
+    if (book.fileName) {
+      const fpath = path.join(UPLOAD_DIR, book.fileName);
+      if (fs.existsSync(fpath)) {
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', 'inline');
+        return fs.createReadStream(fpath).pipe(res);
+      }
+      console.error('[MISSING FILE] Sách id=' + book.id + ' "' + book.title + '" thiếu file tại ' + fpath);
+    }
+    res.status(404).json({ success: false, message: 'File đã bị mất trên server (có thể do server khởi động lại). Vui lòng upload lại tài liệu.' });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+app.get('/api/download/:id', async (req, res) => {
   const book = loadBooks().find(b => b.id === parseInt(req.params.id));
   if (!book) return res.status(404).json({ success: false, message: 'Không tìm thấy tài liệu' });
-  if (book.fileUrl) return res.redirect(book.fileUrl);
+  const filename = (book.originalName || book.fileName || ('document.' + (book.fileType || 'pdf')));
+  if (book.fileUrl) {
+    // Không redirect trực tiếp: nếu redirect, trình duyệt lấy tên file từ URL Cloudinary
+    // (mất phần đuôi/tiếng Việt). Proxy qua server để luôn ép đúng tên + đuôi file.
+    try {
+      const resp = await fetch(book.fileUrl, { signal: AbortSignal.timeout(20000) });
+      if (!resp.ok) return res.status(502).json({ success: false, message: 'Không thể tải file từ nơi lưu trữ' });
+      const buf = Buffer.from(await resp.arrayBuffer());
+      res.setHeader('Content-Disposition', 'attachment; filename="' + encodeURIComponent(filename) + '"');
+      res.setHeader('Content-Type', MIME_TYPES[book.fileType] || 'application/octet-stream');
+      return res.send(buf);
+    } catch (err) { return res.status(500).json({ success: false, message: err.message }); }
+  }
   if (book.fileName) {
     const fpath = path.join(UPLOAD_DIR, book.fileName);
-    if (fs.existsSync(fpath)) return res.download(fpath, book.originalName || book.fileName);
+    if (fs.existsSync(fpath)) return res.download(fpath, filename);
   }
   res.status(404).json({ success: false, message: 'File không tồn tại' });
 });
