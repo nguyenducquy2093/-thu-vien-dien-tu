@@ -205,7 +205,7 @@ app.get('/api/books/:id/read', async (req, res) => {
   const book = loadBooks().find(b => b.id === parseInt(req.params.id));
   if (!book) return res.status(404).json({ success: false, message: 'Không tìm thấy tài liệu' });
   if (book.type === 'inline' && book.pages) return res.json({ success: true, data: { type: 'inline', pages: book.pages } });
-  if (book.fileUrl) return res.json({ success: true, data: { type: 'file', fileUrl: book.fileUrl, fileName: book.originalName || book.fileName, fileType: book.fileType } });
+  if (book.fileUrl) return res.json({ success: true, data: { type: 'file', fileUrl: '/api/proxy/file/' + book.id, fileName: book.originalName || book.fileName, fileType: book.fileType } });
   if (book.fileName) {
     const fpath = path.join(UPLOAD_DIR, book.fileName);
     if (book.fileType === 'txt' && fs.existsSync(fpath)) {
@@ -340,6 +340,19 @@ app.get('/api/download/:id', (req, res) => {
     if (fs.existsSync(fpath)) return res.download(fpath, book.originalName || book.fileName);
   }
   res.status(404).json({ success: false, message: 'File không tồn tại' });
+});
+
+app.get('/api/proxy/file/:id', async (req, res) => {
+  try {
+    const book = loadBooks().find(b => b.id === parseInt(req.params.id));
+    if (!book || !book.fileUrl) return res.status(404).json({ success: false, message: 'File không tồn tại' });
+    const resp = await fetch(book.fileUrl);
+    if (!resp.ok) return res.status(502).json({ success: false, message: 'Không thể tải file từ Cloudinary' });
+    const buf = Buffer.from(await resp.arrayBuffer());
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(buf);
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
 async function startup() {
