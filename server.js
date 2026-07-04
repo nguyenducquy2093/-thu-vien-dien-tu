@@ -330,31 +330,6 @@ app.delete('/api/books/:id', requireRole('Admin', 'Giảng viên'), (req, res) =
   res.json({ success: true, message: 'Đã xóa tài liệu' });
 });
 
-app.get('/api/debug/file/:id', async (req, res) => {
-  try {
-    const book = loadBooks().find(b => b.id === parseInt(req.params.id));
-    if (!book) return res.json({ success: false, message: 'Book not found' });
-    const info = { id: book.id, cloudinaryPublicId: book.cloudinaryPublicId, fileUrl: book.fileUrl, cloudinaryResourceType: book.cloudinaryResourceType, USE_CLOUDINARY };
-    if (book.cloudinaryPublicId && USE_CLOUDINARY) {
-      for (const rt of ['raw', 'image']) {
-        try { const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt }); info['api_' + rt] = { found: true, url: r.secure_url, format: r.format, type: r.type, access_mode: r.access_mode, bytes: r.bytes }; } catch (e) { info['api_' + rt] = { found: false, error: e.message }; }
-      }
-      for (const rt of ['image', 'raw']) {
-        try {
-          const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
-          if (r && r.secure_url) {
-            const privUrl = cloudinary.utils.private_download_url(r.public_id, r.format, { resource_type: rt, type: 'upload', attachment: false });
-            const testResp = await fetch(privUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
-            info['priv_' + rt] = { url: privUrl.substring(0, 150) + '...', status: testResp.status, statusText: testResp.statusText, xCldError: testResp.headers.get('x-cld-error') };
-            if (testResp.ok) { info['priv_' + rt + '_ok'] = true; }
-          }
-        } catch (e) { info['priv_' + rt] = { error: e.message }; }
-      }
-    }
-    res.json({ success: true, data: info });
-  } catch (err) { res.json({ success: false, message: err.message }); }
-});
-
 // ---- Download proxy ----
 app.get('/api/download/:id', (req, res) => {
   const book = loadBooks().find(b => b.id === parseInt(req.params.id));
