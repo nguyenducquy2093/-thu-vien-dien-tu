@@ -337,7 +337,7 @@ app.get('/api/debug/file/:id', async (req, res) => {
     const info = { id: book.id, cloudinaryPublicId: book.cloudinaryPublicId, fileUrl: book.fileUrl, cloudinaryResourceType: book.cloudinaryResourceType };
     if (book.cloudinaryPublicId && USE_CLOUDINARY) {
       for (const rt of ['raw', 'image']) {
-        try { const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt }); info['api_' + rt] = { found: true, url: r.secure_url, format: r.format }; } catch (e) { info['api_' + rt] = { found: false, error: e.message }; }
+        try { const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt }); info['api_' + rt] = { found: true, url: r.secure_url, format: r.format, type: r.type, access_mode: r.access_mode, bytes: r.bytes }; } catch (e) { info['api_' + rt] = { found: false, error: e.message }; }
       }
     }
     res.json({ success: true, data: info });
