@@ -331,6 +331,8 @@ app.delete('/api/books/:id', requireRole('Admin', 'Giảng viên'), (req, res) =
 });
 
 // ---- Download proxy ----
+const MIME_TYPES = { pdf:'application/pdf', doc:'application/msword', docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', xls:'application/vnd.ms-excel', xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', ppt:'application/vnd.ms-powerpoint', pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation', txt:'text/plain', epub:'application/epub+zip', html:'text/html' };
+
 app.get('/api/download/:id', (req, res) => {
   const book = loadBooks().find(b => b.id === parseInt(req.params.id));
   if (!book) return res.status(404).json({ success: false, message: 'Không tìm thấy tài liệu' });
@@ -365,8 +367,8 @@ app.get('/api/proxy/file/:id', async (req, res) => {
     const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
     if (!resp.ok) return res.status(502).json({ success: false, message: 'Không thể tải file từ Cloudinary' });
     const buf = Buffer.from(await resp.arrayBuffer());
-    res.setHeader('Content-Disposition', 'inline');
-    res.setHeader('Content-Type', resp.headers.get('content-type') || 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'inline; filename="' + (book.originalName || 'document.' + book.fileType) + '"');
+    res.setHeader('Content-Type', MIME_TYPES[book.fileType] || resp.headers.get('content-type') || 'application/octet-stream');
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.send(buf);
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
