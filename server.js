@@ -343,11 +343,12 @@ app.get('/api/debug/file/:id', async (req, res) => {
         try {
           const r = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
           if (r && r.secure_url) {
-            const signedUrl = cloudinary.url(r.public_id, { resource_type: rt, secure: true, sign_url: true, type: 'upload', version: r.version, format: r.format });
-            const testResp = await fetch(signedUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
-            info['signed_' + rt] = { url: signedUrl, status: testResp.status, statusText: testResp.statusText, xCldError: testResp.headers.get('x-cld-error') };
+            const privUrl = cloudinary.utils.private_download_url(r.public_id, r.format, { resource_type: rt, type: 'upload', attachment: false });
+            const testResp = await fetch(privUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
+            info['priv_' + rt] = { url: privUrl.substring(0, 150) + '...', status: testResp.status, statusText: testResp.statusText, xCldError: testResp.headers.get('x-cld-error') };
+            if (testResp.ok) { info['priv_' + rt + '_ok'] = true; }
           }
-        } catch (e) { info['signed_' + rt] = { error: e.message }; }
+        } catch (e) { info['priv_' + rt] = { error: e.message }; }
       }
     }
     res.json({ success: true, data: info });
@@ -377,9 +378,8 @@ app.get('/api/proxy/file/:id', async (req, res) => {
         try {
           const info = await cloudinary.api.resource(book.cloudinaryPublicId, { resource_type: rt });
           if (info && info.secure_url) {
-            const signedUrl = cloudinary.url(info.public_id, { resource_type: rt, secure: true, sign_url: true, type: 'upload', version: info.version, format: info.format });
-            const resp = await fetch(signedUrl, { signal: AbortSignal.timeout(10000) });
-            if (resp.ok) { url = signedUrl; break; }
+            url = cloudinary.utils.private_download_url(info.public_id, info.format, { resource_type: rt, type: 'upload', attachment: false });
+            break;
           }
         } catch {}
       }
