@@ -70,11 +70,11 @@ const memoryUpload = multer({
   }
 });
 
-async function uploadToCloudinary(buffer, folder) {
+async function uploadToCloudinary(buffer, folder, resourceType) {
   if (!USE_CLOUDINARY) return null;
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: 'auto', access_mode: 'public' },
+      { folder, resource_type: resourceType || 'auto', access_mode: 'public' },
       (err, result) => { if (err) reject(err); else resolve(result); }
     );
     stream.end(buffer);
@@ -237,8 +237,8 @@ app.post('/api/books', requireRole('Admin', 'Giảng viên'), memoryUpload.field
       book.fileType = path.extname(f.originalname).toLowerCase().slice(1);
       book.fileSize = f.size;
       if (USE_CLOUDINARY) {
-        const result = await uploadToCloudinary(f.buffer, 'thu-vien-dien-tu/files');
-        if (result) { book.fileUrl = result.secure_url; book.cloudinaryPublicId = result.public_id; }
+        const result = await uploadToCloudinary(f.buffer, 'thu-vien-dien-tu/files', 'raw');
+        if (result) { book.fileUrl = result.secure_url; book.cloudinaryPublicId = result.public_id; book.cloudinaryResourceType = result.resource_type; }
       } else {
         const localName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(f.originalname);
         fs.writeFileSync(path.join(UPLOAD_DIR, localName), f.buffer);
@@ -285,8 +285,8 @@ app.put('/api/books/:id', requireRole('Admin', 'Giảng viên'), memoryUpload.fi
       updated.fileType = path.extname(f.originalname).toLowerCase().slice(1);
       updated.fileSize = f.size; updated.type = 'file';
       if (USE_CLOUDINARY) {
-        const result = await uploadToCloudinary(f.buffer, 'thu-vien-dien-tu/files');
-        if (result) { updated.fileUrl = result.secure_url; updated.cloudinaryPublicId = result.public_id; }
+        const result = await uploadToCloudinary(f.buffer, 'thu-vien-dien-tu/files', 'raw');
+        if (result) { updated.fileUrl = result.secure_url; updated.cloudinaryPublicId = result.public_id; updated.cloudinaryResourceType = result.resource_type; }
         delete updated.fileName;
       } else {
         const localName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(f.originalname);
@@ -345,8 +345,21 @@ app.get('/api/download/:id', (req, res) => {
 app.get('/api/proxy/file/:id', async (req, res) => {
   try {
     const book = loadBooks().find(b => b.id === parseInt(req.params.id));
-    if (!book || !book.fileUrl) return res.status(404).json({ success: false, message: 'File không tồn tại' });
-    const resp = await fetch(book.fileUrl);
+    if (!book || (!book.fileUrl && !book.cloudinaryPublicId)) return res.status(404).json({ success: false, message: 'File không tồn tại' });
+
+    let url = book.fileUrl;
+    if (book.cloudinaryPublicId && USE_CLOUDINARY) {
+      const types = book.cloudinaryResourceType ? [book.cloudinaryResourceType, 'raw', 'image'] : ['raw', 'image'];
+      for (const rt of [...new Set(types)]) {
+        try {
+          const u = cloudinary.url(book.cloudinaryPublicId, { resource_type: rt, secure: true, sign_url: true });
+          const resp = await fetch(u, { signal: AbortSignal.timeout(10000) });
+          if (resp.ok) { url = u; break; }
+        } catch {}
+      }
+    }
+
+    const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
     if (!resp.ok) return res.status(502).json({ success: false, message: 'Không thể tải file từ Cloudinary' });
     const buf = Buffer.from(await resp.arrayBuffer());
     res.setHeader('Content-Disposition', 'inline');
