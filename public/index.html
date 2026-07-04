@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thư viện Điện tử</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;color:#333;min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,#1a237e,#283593);color:#fff;padding:16px 32px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,.3);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:12px}
+header h1{font-size:22px;display:flex;align-items:center;gap:8px;cursor:pointer}
+header h1 span{color:#ffd54f}
+.header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search-box{display:flex}
+.search-box input{padding:9px 16px;border:none;border-radius:25px 0 0 25px;width:240px;font-size:14px;outline:none}
+.search-box button{padding:9px 18px;background:#ffd54f;color:#1a237e;border:none;cursor:pointer;font-weight:700;transition:background .2s}
+.search-box button:first-of-type{border-radius:0}
+.search-box button:hover{background:#ffca28}
+.search-box .btn-upload{padding:9px 20px;background:#43a047;color:#fff;border:none;border-radius:0 25px 25px 0;cursor:pointer;font-weight:700;font-size:14px;transition:background .2s}
+.search-box .btn-upload:hover{background:#388e3c}
+.container{max-width:1300px;margin:0 auto;padding:24px 20px;flex:1;width:100%}
+.section-title{font-size:20px;font-weight:700;color:#1a237e;margin-bottom:16px}
+.section-title .badge{font-size:12px;background:#e8eaf6;color:#1a237e;padding:2px 10px;border-radius:12px;font-weight:600}
+.section{margin-bottom:36px}
+.scroll-row{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.scroll-row::-webkit-scrollbar{height:6px}
+.scroll-row::-webkit-scrollbar-thumb{background:#c5cae9;border-radius:3px}
+.scroll-row::-webkit-scrollbar-track{background:transparent}
+.scroll-row .book-card{flex:0 0 200px;scroll-snap-align:start}
+.book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px}
+.book-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);cursor:pointer;transition:transform .3s,box-shadow .3s;display:flex;flex-direction:column}
+.book-card:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,.13)}
+.book-cover{height:200px;background:linear-gradient(135deg,#e8eaf6,#c5cae9);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#1a237e;position:relative;overflow:hidden}
+.book-cover img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+.book-cover .cover-letter{position:relative;z-index:1}
+.book-cover .file-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;z-index:2}
+.book-info{padding:12px 14px;flex:1;display:flex;flex-direction:column}
+.book-info h3{font-size:14px;margin-bottom:3px;color:#1a237e;line-height:1.3}
+.book-info .author{font-size:12px;color:#888}
+.book-info .meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.book-info .doc-type{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.doc-type-book{background:#e3f2fd;color:#1565c0}
+.doc-type-article{background:#e8f5e9;color:#2e7d32}
+.doc-type-thesis{background:#fce4ec;color:#c62828}
+.book-info .category-tag{padding:2px 8px;background:#e8eaf6;border-radius:10px;font-size:10px;color:#1a237e;font-weight:600}
+.book-info .rating{margin-top:4px;color:#ffa000;font-size:12px}
+.book-footer{display:flex;gap:6px;padding:8px 14px;border-top:1px solid #f0f0f0}
+.book-footer .uploader{font-size:11px;color:#aaa;flex:1;align-self:center}
+.book-footer button{padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:background .2s}
+.book-footer .dl-btn{background:#e8eaf6;color:#1a237e}
+.book-footer .dl-btn:hover{background:#c5cae9}
+.book-footer .edit-btn{background:#e3f2fd;color:#1565c0}
+.book-footer .edit-btn:hover{background:#bbdefb}
+.book-footer .del-btn{background:#ffebee;color:#c62828}
+.book-footer .del-btn:hover{background:#ffcdd2}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.cat-card{background:#fff;border-radius:14px;padding:28px 20px;box-shadow:0 2px 12px rgba(0,0,0,.08);cursor:pointer;transition:transform .3s,box-shadow .3s;text-align:center}
+.cat-card:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,.13)}
+.cat-card .icon{font-size:48px;margin-bottom:10px;font-weight:700;color:#1a237e}
+.cat-card h3{font-size:16px;color:#1a237e;margin-bottom:4px}
+.cat-card .count{font-size:13px;color:#888}
+.filter-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.filter-header .back-btn{padding:8px 16px;background:transparent;border:2px solid #1a237e;color:#1a237e;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:.3s}
+.filter-header .back-btn:hover{background:#1a237e;color:#fff}
+.filter-header h2{font-size:20px;color:#1a237e}
+.no-result{grid-column:1/-1;text-align:center;padding:60px 20px;color:#999;font-size:16px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:999;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:18px 24px;background:#1a237e;color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0}
+.modal-header h2{font-size:18px}
+.modal-close{background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1}
+.modal-body{padding:24px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:5px;font-weight:600;font-size:13px;color:#555}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;transition:border .2s;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1a237e}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group .hint{font-size:12px;color:#999;margin-top:4px}
+.form-submit{width:100%;padding:12px;background:#1a237e;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;transition:background .2s}
+.form-submit:hover{background:#283593}
+.form-submit:disabled{background:#9fa8da;cursor:not-allowed}
+.reader-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:999;justify-content:center;align-items:center}
+.reader-overlay.show{display:flex}
+.reader{width:90%;max-width:1200px;height:100vh;background:#181818;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 60px rgba(0,0,0,.6);animation:slideUp .3s ease}
+.reader-header{padding:12px 22px;background:#1a1a2e;color:#eee;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;border-bottom:1px solid #2a2a3e}
+.reader-header h2{font-size:15px;flex:1;margin-right:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.reader-close{background:none;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1;padding:0 4px;transition:color .2s}
+.reader-close:hover{color:#fff}
+.reader-body{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0}
+.reader-body .page-text{background:#faf8f2;width:92%;max-width:860px;height:88%;padding:44px 56px;overflow-y:auto;border-radius:3px;box-shadow:0 2px 24px rgba(0,0,0,.35);line-height:2;font-size:18px;color:#333}
+.reader-body .page-text p{margin-bottom:14px;text-align:justify}
+.reader-body .page-text p:last-child{margin-bottom:0}
+.reader-body .page-img{max-width:96%;max-height:92%;object-fit:contain;border-radius:3px;box-shadow:0 2px 24px rgba(0,0,0,.35)}
+.reader-body .file-preview{width:100%;height:100%;border:none}
+.reader-body .click-left,.reader-body .click-right{position:absolute;top:0;bottom:0;width:35%;cursor:pointer;z-index:10;transition:background .2s}
+.reader-body .click-left{left:0}
+.reader-body .click-right{right:0}
+.reader-body .click-left:hover{background:linear-gradient(90deg,rgba(255,255,255,.06),transparent)}
+.reader-body .click-right:hover{background:linear-gradient(270deg,rgba(255,255,255,.06),transparent)}
+.reader-body .dl-bar{position:absolute;bottom:14px;right:18px;background:rgba(0,0,0,.65);padding:5px 12px;border-radius:4px;z-index:11;font-size:12px}
+.reader-body .dl-bar a{color:#ffd54f;text-decoration:none}
+.reader-body .dl-bar span{color:#999;margin-left:8px}
+.reader-footer{padding:10px 22px;background:#1a1a2e;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;border-top:1px solid #2a2a3e}
+.reader-footer .page-info{color:#aaa;font-size:13px}
+.reader-footer .nav-group{display:flex;gap:10px}
+.reader-footer button{padding:6px 18px;background:transparent;color:#ccc;border:1px solid #444;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;transition:all .2s}
+.reader-footer button:hover:not(:disabled){background:#333;border-color:#666;color:#fff}
+.reader-footer button:disabled{opacity:.3;cursor:default}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .4s;z-index:1001;pointer-events:none}
+.toast.show{opacity:1}
+.loading{text-align:center;padding:60px 0;color:#999}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1a237e;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.login-btn{padding:8px 18px;background:#ffd54f;color:#1a237e;border:none;border-radius:20px;cursor:pointer;font-weight:700;font-size:13px;transition:background .2s}.login-btn:hover{background:#ffca28}.user-badge{display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;font-weight:600}.user-badge .role-tag{font-size:10px;background:rgba(255,255,255,.15);padding:2px 10px;border-radius:10px}.user-badge .logout-link{background:none;border:none;color:#ffd54f;cursor:pointer;font-size:11px;text-decoration:underline;padding:0}.user-badge .logout-link:hover{color:#fff}
+.cov-grad{width:100%;height:100%;position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}.cov-grad svg{width:36px;height:36px;opacity:.7}.cov-grad .cov-letter{font-size:28px;font-weight:700;color:rgba(255,255,255,.9);text-shadow:0 2px 8px rgba(0,0,0,.3);position:relative;z-index:1}.file-badge{z-index:2}
+@media(max-width:700px){
+header{padding:12px 16px;flex-direction:column}
+header h1{font-size:18px}
+.header-actions{width:100%}
+.search-box{flex:1;flex-wrap:wrap}
+.search-box input{width:100%;border-radius:25px}
+.search-box button:first-of-type{border-radius:25px}
+.search-box .btn-upload{border-radius:25px}
+.cat-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.book-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.book-cover{height:160px;font-size:24px}
+.scroll-row .book-card{flex:0 0 150px}
+.reader{width:96%;height:94vh}.reader-body .page-text{padding:24px 20px;font-size:15px;height:84%;max-width:100%}.reader-body .page-img{max-width:98%;max-height:88%}
+.modal-body{padding:16px}
+}
+</style>
+</head>
+<body>
+<header>
+<h1 onclick="showHome()"><img id="logoImg" src="" alt="Logo" style="height:36px;display:none;cursor:pointer"> <span id="logoText">Thư viện <span>Điện tử</span></span></h1>
+<div class="header-actions">
+<div class="search-box">
+<input type="text" id="searchInput" placeholder="Tìm tài liệu, tác giả..." onkeyup="debounceSearch()">
+<button onclick="doSearch()">Tìm</button>
+<button class="btn-upload" id="uploadBtnHeader" onclick="openUploadModal()">+ Upload</button>
+</div>
+<div id="authSection">
+<button class="login-btn" id="loginBtn" onclick="openLoginModal()">Đăng nhập</button>
+<div id="userInfo" style="display:none" class="user-badge">
+<span id="userName"></span><span class="role-tag" id="userRole"></span>
+<button class="logout-link" onclick="logout()">Thoát</button>
+</div>
+</div>
+</div>
+</header>
+<div class="container" id="mainContent"></div>
+
+<div class="modal-overlay" id="uploadModal">
+<div class="modal-box">
+<div class="modal-header"><h2 id="uploadModalTitle">Upload Tài Liệu</h2><button class="modal-close" onclick="closeUploadModal()">&times;</button></div>
+<div class="modal-body">
+<div class="form-group"><label>Loại tài liệu *</label><select id="bookDocType"><option value="Sách điện tử">Sách điện tử</option><option value="Bài báo khoa học">Bài báo khoa học</option><option value="Luận án, luận văn">Luận án, luận văn</option></select></div>
+<div class="form-group"><label>Tên tài liệu *</label><input type="text" id="bookTitle" placeholder="VD: Giáo trình Toán cao cấp"></div>
+<div class="form-group"><label>Tác giả *</label><input type="text" id="bookAuthor" placeholder="VD: Nguyễn Văn A"></div>
+<div class="form-group"><label>Thể loại *</label><select id="bookCategory"><option value="Giáo trình">Giáo trình</option><option value="Khoa học">Khoa học</option><option value="Văn học">Văn học</option><option value="Kỹ thuật">Kỹ thuật</option><option value="Công nghệ">Công nghệ</option><option value="Ngoại ngữ">Ngoại ngữ</option><option value="Kinh tế">Kinh tế</option><option value="Lịch sử">Lịch sử</option><option value="Self-help">Self-help</option><option value="Khác">Khác</option></select></div>
+<div class="form-group"><label>Mô tả</label><textarea id="bookDesc" placeholder="Mô tả ngắn về nội dung..."></textarea></div>
+<div class="form-group"><label>Người upload</label><input type="text" id="bookUploader" placeholder="Tên của bạn (hoặc để trống)"></div>
+<div class="form-group" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="bookFeatured" style="width:18px;height:18px;cursor:pointer"><label for="bookFeatured" style="margin:0;cursor:pointer;font-weight:400">Tài liệu nổi bật</label></div>
+<div class="form-group"><label>Ảnh bìa</label><input type="file" id="bookCover" accept=".jpg,.jpeg,.png,.gif,.webp"><div class="hint">Để trống sẽ dùng auto-cover gradient</div><div id="coverPreview" style="margin-top:8px;display:none"><img style="max-width:120px;max-height:160px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.2)"></div></div>
+<div class="form-group"><label>Chọn file</label><input type="file" id="bookFile" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx,.epub,.html"><div class="hint" id="fileHint">Hỗ trợ: PDF, DOC, DOCX, TXT, PPT, XLS, EPUB (tối đa 100MB)</div></div>
+<input type="hidden" id="editBookId" value="">
+<button class="form-submit" id="uploadBtn" onclick="uploadBook()">Upload lên thư viện</button>
+</div></div></div>
+
+<div class="reader-overlay" id="readerModal">
+<div class="reader">
+<div class="reader-header"><h2 id="readerTitle">Tên tài liệu</h2><button class="reader-close" onclick="closeReader()">&times;</button></div>
+<div class="reader-body" id="readerBody"><div class="loading"><div class="spinner"></div></div></div>
+<div class="reader-footer">
+<button id="prevPage" onclick="changePage(-1)">Trang trước</button>
+<span class="page-info" id="pageInfo">Trang 1 / 1</span>
+<button id="nextPage" onclick="changePage(1)">Trang sau</button>
+</div></div></div>
+
+<div class="modal-overlay" id="loginModal">
+<div class="modal-box" style="max-width:400px">
+<div class="modal-header"><h2>Đăng nhập</h2><button class="modal-close" onclick="closeLoginModal()">&times;</button></div>
+<div class="modal-body">
+<div class="form-group"><label>Tên đăng nhập</label><input type="text" id="loginUsername" placeholder="Nhập tên đăng nhập"></div>
+<div class="form-group"><label>Mật khẩu</label><input type="password" id="loginPassword" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')doLogin()"></div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<button class="form-submit" style="flex:1" onclick="doLogin()">Đăng nhập</button>
+<button class="form-submit" style="flex:1;background:#43a047" onclick="openRegisterModal()">Đăng ký</button>
+</div>
+</div></div></div>
+
+<div class="modal-overlay" id="registerModal">
+<div class="modal-box" style="max-width:400px">
+<div class="modal-header"><h2>Đăng ký tài khoản</h2><button class="modal-close" onclick="closeRegisterModal()">&times;</button></div>
+<div class="modal-body">
+<div class="form-group"><label>Tên đăng nhập</label><input type="text" id="regUsername" placeholder="Chọn tên đăng nhập"></div>
+<div class="form-group"><label>Mật khẩu</label><input type="password" id="regPassword" placeholder="Nhập mật khẩu"></div>
+<div class="form-group"><label>Vai trò</label><select id="regRole"><option value="Sinh viên">Sinh viên</option><option value="Giảng viên">Giảng viên</option></select></div>
+<button class="form-submit" onclick="doRegister()">Đăng ký</button>
+</div></div></div>
+
+<div class="toast" id="toast"></div>
+<script>
+var API_BASE='';var currentUser=null,currentFilter=null,booksData=[],currentBook=null,currentPage=0,searchTimer=null;
+var PALETTES=[['#667eea','#764ba2'],['#f093fb','#f5576c'],['#4facfe','#00f2fe'],['#43e97b','#38f9d7'],['#fa709a','#fee140'],['#a18cd1','#fbc2eb'],['#fccb90','#d57eeb'],['#e0c3fc','#8ec5fc'],['#f5576c','#ff6f91'],['#30cfd0','#330867'],['#667eea','#f5576c'],['#0cebeb','#20e3b2','#29ffc6']];
+var DOC_ICONS={'Sách điện tử':'<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5"><path d="M4 6h16M4 18h16M4 12h16M4 6v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M12 8v8"/><path d="M9 8h6M9 12h6"/></svg>','Bài báo khoa học':'<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>','Luận án, luận văn':'<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>'};
+function getPalette(t){var h=0;for(var i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))%PALETTES.length;return PALETTES[h]}
+function getDocSvg(dt){return DOC_ICONS[dt]||''}
+function getInitial(t){var c=t.trim().charAt(0).toUpperCase();if(c>='A'&&c<='Z'||c>='À'&&c<='Ỹ')return c;return'?'}
+function getCoverHtml(b){if(b.coverUrl)return'<img src="'+b.coverUrl+'" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover">';var p=getPalette(b.title+b.docType);var g='linear-gradient(135deg,'+p.join(',')+')';var l=getInitial(b.title);var ic=getDocSvg(b.docType);return'<div style="width:100%;height:100%;background:'+g+';display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;position:absolute;top:0;left:0">'+ic+'<span style="font-size:28px;font-weight:700;color:rgba(255,255,255,.9);text-shadow:0 2px 8px rgba(0,0,0,.3)">'+l+'</span></div>'}
+function fs(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
+function showToast(m,e){var t=document.getElementById('toast');t.textContent=m;t.style.background=e?'#c62828':'#323232';t.classList.add('show');clearTimeout(t._hide);t._hide=setTimeout(function(){t.classList.remove('show')},3000)}
+
+async function api(url,opts){var res=await fetch(API_BASE+url,{credentials:'include',...opts});var d=await res.json();if(!d.success)throw new Error(d.message||'Lỗi server');return d}
+function canUpload(){return currentUser&&(currentUser.role==='Admin'||currentUser.role==='Giảng viên')}
+function canEdit(){return currentUser&&(currentUser.role==='Admin'||currentUser.role==='Giảng viên')}
+function canDelete(){return currentUser&&(currentUser.role==='Admin'||currentUser.role==='Giảng viên')}
+
+function renderBookCard(b){var s='';for(var i=0;i<5;i++)s+=i<b.rating?'<span style="color:#ffa000">*</span>':'<span style="color:#e0e0e0">*</span>';var ch=getCoverHtml(b);var bg=b.type==='file'?'<span class="file-badge">'+b.fileType.toUpperCase()+'</span>':'';var dc=b.docType==='Sách điện tử'?'doc-type-book':b.docType==='Bài báo khoa học'?'doc-type-article':'doc-type-thesis';var ed=canEdit()?'<button class="edit-btn" onclick="event.stopPropagation();editBook('+b.id+')">Sửa</button>':'';var dl=canDelete()?'<button class="del-btn" onclick="event.stopPropagation();deleteBook('+b.id+')">Xóa</button>':'';var dn='<button class="dl-btn" onclick="event.stopPropagation();downloadBook('+b.id+')">Tải</button>';return'<div class="book-card" onclick="openReader('+b.id+')"><div class="book-cover" style="position:relative">'+ch+bg+'</div><div class="book-info"><h3>'+b.title+'</h3><div class="author">'+b.author+'</div><div class="meta"><span class="doc-type '+dc+'">'+b.docType+'</span><span class="category-tag">'+b.category+'</span></div><div class="rating">'+s+'</div></div><div class="book-footer"><span class="uploader">'+(b.uploader?b.uploader:'')+'</span>'+dn+ed+dl+'</div></div>'}
+
+async function renderHome(){document.getElementById('searchInput').value='';currentFilter=null;var all;try{all=(await api('/api/books')).data}catch(e){document.getElementById('mainContent').innerHTML='<div class="no-result">Lỗi tải dữ liệu: '+e.message+'</div>';return}var featured=all.filter(function(b){return b.featured}).slice(0,8);var newest=[].concat(all).sort(function(a,b){return(b.createdAt||'').localeCompare(a.createdAt||'')}).slice(0,8);document.getElementById('mainContent').innerHTML='<div class="section"><div class="section-title">Tài liệu nổi bật <span class="badge">'+featured.length+'</span></div><div class="scroll-row">'+featured.map(function(b){return renderBookCard(b)}).join('')+'</div></div><div class="section"><div class="section-title">Tài liệu mới cập nhật <span class="badge">'+newest.length+'</span></div><div class="book-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">'+newest.map(function(b){return renderBookCard(b)}).join('')+'</div></div><div class="section"><div class="section-title">Danh mục tài liệu</div><div class="cat-grid"><div class="cat-card" onclick="filterByDocType(\'Sách điện tử\')"><div class="icon">S</div><h3>Sách điện tử</h3><div class="count">'+all.filter(function(b){return b.docType==='Sách điện tử'}).length+' tài liệu</div></div><div class="cat-card" onclick="filterByDocType(\'Bài báo khoa học\')"><div class="icon">B</div><h3>Bài báo khoa học</h3><div class="count">'+all.filter(function(b){return b.docType==='Bài báo khoa học'}).length+' tài liệu</div></div><div class="cat-card" onclick="filterByDocType(\'Luận án, luận văn\')"><div class="icon">L</div><h3>Luận án, luận văn</h3><div class="count">'+all.filter(function(b){return b.docType==='Luận án, luận văn'}).length+' tài liệu</div></div><div class="cat-card" onclick="filterByDocType(\'Tất cả\')"><div class="icon">T</div><h3>Tất cả tài liệu</h3><div class="count">'+all.length+' tài liệu</div></div></div></div>'}
+
+function renderFilteredView(title,books){booksData=books;var c=document.getElementById('mainContent');if(!books.length){c.innerHTML='<div class="filter-header"><button class="back-btn" onclick="renderHome()">Quay lại</button><h2>'+title+'</h2></div><div class="no-result">Không có tài liệu nào</div>';return}c.innerHTML='<div class="filter-header"><button class="back-btn" onclick="renderHome()">Quay lại</button><h2>'+title+'</h2><span style="color:#888;font-size:14px">'+books.length+' tài liệu</span></div><div class="book-grid">'+books.map(function(b){return renderBookCard(b)}).join('')+'</div>'}
+
+async function filterByDocType(t){var all;try{all=(await api('/api/books')).data}catch(e){return}if(t==='Tất cả'){renderFilteredView('Tất cả tài liệu',all);return}renderFilteredView(t,all.filter(function(b){return b.docType===t}))}
+
+async function doSearch(){var q=document.getElementById('searchInput').value.trim();if(!q){renderHome();return}var all;try{all=(await api('/api/books')).data}catch(e){return}var f=all.filter(function(b){return b.title.toLowerCase().indexOf(q.toLowerCase())>=0||b.author.toLowerCase().indexOf(q.toLowerCase())>=0});renderFilteredView('Kết quả: "'+q+'"',f)}
+
+function debounceSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(doSearch,400)}
+function showHome(){document.getElementById('searchInput').value='';renderHome()}
+
+function openUploadModal(){if(!canUpload())return showToast('Bạn không có quyền upload tài liệu',true);document.getElementById('editBookId').value='';document.getElementById('uploadModalTitle').textContent='Upload Tài Liệu';document.getElementById('uploadBtn').innerHTML='Upload lên thư viện';document.getElementById('bookDocType').value='Sách điện tử';document.getElementById('bookTitle').value='';document.getElementById('bookAuthor').value='';document.getElementById('bookCategory').value='Giáo trình';document.getElementById('bookDesc').value='';document.getElementById('bookUploader').value='';document.getElementById('bookFile').value='';document.getElementById('bookCover').value='';document.getElementById('coverPreview').style.display='none';document.getElementById('bookFeatured').checked=false;document.getElementById('fileHint').textContent='Hỗ trợ: PDF, DOC, DOCX, TXT, PPT, XLS, EPUB (tối đa 100MB)';document.getElementById('uploadModal').classList.add('show')}
+function closeUploadModal(){document.getElementById('uploadModal').classList.remove('show')}
+
+async function editBook(id){if(!canEdit())return showToast('Bạn không có quyền sửa tài liệu',true);var b;try{b=(await api('/api/books/'+id)).data}catch(e){return showToast('Không tìm thấy tài liệu',true)}document.getElementById('editBookId').value=id;document.getElementById('uploadModalTitle').textContent='Sửa Tài Liệu';document.getElementById('uploadBtn').innerHTML='Lưu thay đổi';document.getElementById('bookDocType').value=b.docType||'Sách điện tử';document.getElementById('bookTitle').value=b.title;document.getElementById('bookAuthor').value=b.author;document.getElementById('bookCategory').value=b.category;document.getElementById('bookDesc').value=b.description||'';document.getElementById('bookUploader').value=b.uploader||'';document.getElementById('bookFile').value='';document.getElementById('bookCover').value='';document.getElementById('bookFeatured').checked=!!b.featured;document.getElementById('fileHint').textContent='Để trống nếu không muốn thay đổi file';var p=document.getElementById('coverPreview');if(b.coverUrl){p.style.display='block';p.querySelector('img').src=b.coverUrl}else p.style.display='none';document.getElementById('uploadModal').classList.add('show')}
+
+async function uploadBook(){var eid=parseInt(document.getElementById('editBookId').value)||0;var dt=document.getElementById('bookDocType').value;var tl=document.getElementById('bookTitle').value.trim();var tg=document.getElementById('bookAuthor').value.trim();var tl2=document.getElementById('bookCategory').value;var mt=document.getElementById('bookDesc').value.trim();var up=document.getElementById('bookUploader').value.trim();var fi=document.getElementById('bookFile');var ci=document.getElementById('bookCover');var btn=document.getElementById('uploadBtn');if(!tl)return showToast('Vui lòng nhập tên tài liệu',true);if(!tg)return showToast('Vui lòng nhập tác giả',true);if(!eid&&!fi.files.length)return showToast('Vui lòng chọn file',true);var f=fi.files[0];if(f&&f.size>100*1024*1024)return showToast('File quá lớn (tối đa 100MB)',true);var cf=ci.files[0];if(cf&&cf.size>5*1024*1024)return showToast('Ảnh bìa quá lớn (tối đa 5MB)',true);btn.disabled=true;btn.innerHTML='Đang xử lý...';try{var fd=new FormData();fd.append('title',tl);fd.append('author',tg);fd.append('category',tl2);fd.append('docType',dt);fd.append('description',mt);fd.append('uploader',up);fd.append('featured',document.getElementById('bookFeatured').checked?'true':'false');if(f)fd.append('file',f);if(cf)fd.append('cover',cf);var url=API_BASE+(eid?'/api/books/'+eid:'/api/books');var method=eid?'PUT':'POST';var res=await fetch(url,{method,body:fd,credentials:'include'});var d=await res.json();if(!d.success)throw new Error(d.message||'Lỗi');showToast('Đã '+(eid?'cập nhật':'upload')+' thành công!');closeUploadModal();renderHome()}catch(err){showToast('Lỗi: '+err.message,true)}finally{btn.disabled=false;btn.innerHTML=eid?'Lưu thay đổi':'Upload lên thư viện'}}
+
+async function deleteBook(id){if(!canDelete())return showToast('Bạn không có quyền xóa tài liệu',true);var all;try{all=(await api('/api/books')).data}catch(e){return}var b=all.find(function(x){return x.id===id});if(!b)return;if(!confirm('Xóa "'+b.title+'" khỏi thư viện?'))return;try{await api('/api/books/'+id,{method:'DELETE'});showToast('Đã xóa "'+b.title+'"');renderHome()}catch(e){showToast('Lỗi: '+e.message,true)}}
+
+function downloadBook(id){getAllBooks().then(function(all){var b=all.find(function(x){return x.id===id});if(!b||!(b.fileUrl||b.fileName))return;var a=document.createElement('a');a.href=b.fileUrl||API_BASE+'/api/download/'+b.id;a.download=b.originalName||b.fileName||'';document.body.appendChild(a);a.click();document.body.removeChild(a)})}
+
+async function getAllBooks(){return(await api('/api/books')).data}
+
+async function openReader(id){var b;try{b=(await api('/api/books/'+id)).data}catch(e){return}currentBook=b;document.getElementById('readerModal').classList.add('show');document.getElementById('readerTitle').textContent=b.title;var body=document.getElementById('readerBody');var footer=document.querySelector('.reader-footer');if(b.type==='inline'&&b.pages){currentBook._pages=b.pages;currentPage=0;footer.style.display='flex';updatePage()}else if(b.type==='file'&&(b.fileUrl||b.fileName)){currentBook._pages=null;try{var rd=await api('/api/books/'+id+'/read');var data=rd.data;if(data.type==='inline'||data.type==='text'){currentBook._pages=data.pages;currentPage=0;footer.style.display='flex';updatePage();return}footer.style.display='none';var url=data.fileUrl||API_BASE+'/uploads/'+b.fileName;var fn=b.originalName||b.title;var sz=b.fileSize?fs(b.fileSize):'';var dl='<div class="dl-bar"><a href="'+url+'" download="'+fn+'">Tải về máy</a><span>'+fn+' ('+sz+')</span></div>';if(b.fileType==='pdf')body.innerHTML='<iframe class="file-preview" src="'+url+'#view=FitH"></iframe>'+dl;else if(['png','jpg','jpeg','gif','webp'].indexOf(b.fileType)>=0)body.innerHTML='<img class="page-img" src="'+url+'" alt="">'+dl;else body.innerHTML='<iframe class="file-preview" src="'+url+'"></iframe>'+dl}catch(e){body.innerHTML='<div class="no-result">Lỗi: '+e.message+'</div>'}}else{body.innerHTML='<div class="no-result">Không có dữ liệu</div>';footer.style.display='none'}}
+
+function updatePage(){if(!currentBook||!currentBook._pages)return;document.getElementById('readerBody').innerHTML='<div class="page-text"><p>'+currentBook._pages[currentPage]+'</p></div><div class="click-left" onclick="changePage(-1)"></div><div class="click-right" onclick="changePage(1)"></div>';document.getElementById('pageInfo').textContent='Trang '+(currentPage+1)+' / '+currentBook._pages.length;document.getElementById('prevPage').disabled=currentPage===0;document.getElementById('nextPage').disabled=currentPage===currentBook._pages.length-1}
+function changePage(d){if(!currentBook||!currentBook._pages)return;var n=currentPage+d;if(n<0||n>=currentBook._pages.length)return;currentPage=n;updatePage()}
+function closeReader(){document.getElementById('readerModal').classList.remove('show');currentBook=null}
+
+function openLoginModal(){document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginModal').classList.add('show')}
+function closeLoginModal(){document.getElementById('loginModal').classList.remove('show')}
+function openRegisterModal(){closeLoginModal();document.getElementById('regUsername').value='';document.getElementById('regPassword').value='';document.getElementById('regRole').value='Sinh viên';document.getElementById('registerModal').classList.add('show')}
+function closeRegisterModal(){document.getElementById('registerModal').classList.remove('show')}
+
+async function doLogin(){var u=document.getElementById('loginUsername').value.trim();var p=document.getElementById('loginPassword').value;if(!u||!p)return showToast('Vui lòng nhập đầy đủ thông tin',true);try{var d=await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});currentUser=d.user;closeLoginModal();updateAuthUI();showToast('Đăng nhập thành công: '+d.user.username);renderHome()}catch(e){showToast(e.message,true)}}
+
+async function doRegister(){var u=document.getElementById('regUsername').value.trim();var p=document.getElementById('regPassword').value;var r=document.getElementById('regRole').value;if(!u||!p)return showToast('Vui lòng nhập đầy đủ thông tin',true);if(u.length<3)return showToast('Tên đăng nhập ít nhất 3 ký tự',true);if(p.length<4)return showToast('Mật khẩu ít nhất 4 ký tự',true);try{await api('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,role:r})});closeRegisterModal();showToast('Đăng ký thành công! Vui lòng đăng nhập.')}catch(e){showToast(e.message,true)}}
+
+async function logout(){try{await api('/api/logout')}catch(e){}currentUser=null;updateAuthUI();showToast('Đã đăng xuất');renderHome()}
+
+function updateAuthUI(){var btn=document.getElementById('loginBtn');var info=document.getElementById('userInfo');var un=document.getElementById('userName');var ur=document.getElementById('userRole');var uh=document.getElementById('uploadBtnHeader');if(currentUser){btn.style.display='none';info.style.display='flex';un.textContent=currentUser.username;var roleLabel=currentUser.role==='Admin'?'Admin':currentUser.role==='Giảng viên'?'Giảng viên':'Sinh viên';ur.textContent=roleLabel;uh.style.display=canUpload()?'':'none'}else{btn.style.display='';info.style.display='none';uh.style.display=''}}
+
+document.getElementById('bookCover').addEventListener('change',function(){var p=document.getElementById('coverPreview');if(this.files&&this.files[0]){var r=new FileReader();r.onload=function(e){p.style.display='block';p.querySelector('img').src=e.target.result};r.readAsDataURL(this.files[0])}else p.style.display='none'})
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document.getElementById('uploadModal').classList.contains('show'))closeUploadModal();else closeReader()}if(currentBook&&currentBook._pages){if(e.key==='ArrowLeft')changePage(-1);if(e.key==='ArrowRight')changePage(1)}})
+document.getElementById('uploadModal').addEventListener('click',function(e){if(e.target===document.getElementById('uploadModal'))closeUploadModal()})
+document.getElementById('readerModal').addEventListener('click',function(e){if(e.target===document.getElementById('readerModal'))closeReader()})
+document.getElementById('loginModal').addEventListener('click',function(e){if(e.target===document.getElementById('loginModal'))closeLoginModal()})
+document.getElementById('registerModal').addEventListener('click',function(e){if(e.target===document.getElementById('registerModal'))closeRegisterModal()})
+
+(async function init(){try{var d=await api('/api/me');currentUser=d.user}catch(e){}updateAuthUI();renderHome()})()
+</script>
+</body>
+</html>
