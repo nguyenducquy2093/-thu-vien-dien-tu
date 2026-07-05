@@ -173,15 +173,28 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/register', (req, res) => {
-  const { username, password, role } = req.body;
-  if (!username || !password || !role) return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ thông tin' });
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ thông tin' });
   if (username.length < 3) return res.status(400).json({ success: false, message: 'Tên đăng nhập ít nhất 3 ký tự' });
   if (password.length < 4) return res.status(400).json({ success: false, message: 'Mật khẩu ít nhất 4 ký tự' });
   const users = loadUsers();
   if (users.find(u => u.username === username)) return res.status(400).json({ success: false, message: 'Tên đăng nhập đã tồn tại' });
-  users.push({ username, password, role });
+  users.push({ username, password, role: 'Sinh viên' });
   saveUsers(users);
   res.json({ success: true, message: 'Đăng ký thành công!' });
+});
+
+app.post('/api/users', requireRole('Admin'), (req, res) => {
+  const { username, password, role } = req.body;
+  if (!username || !password || !role) return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ thông tin' });
+  if (username.length < 3) return res.status(400).json({ success: false, message: 'Tên đăng nhập ít nhất 3 ký tự' });
+  if (password.length < 4) return res.status(400).json({ success: false, message: 'Mật khẩu ít nhất 4 ký tự' });
+  if (!['Giảng viên', 'Sinh viên'].includes(role)) return res.status(400).json({ success: false, message: 'Vai trò không hợp lệ' });
+  const users = loadUsers();
+  if (users.find(u => u.username === username)) return res.status(400).json({ success: false, message: 'Tên đăng nhập đã tồn tại' });
+  users.push({ username, password, role });
+  saveUsers(users);
+  res.json({ success: true, message: 'Tạo tài khoản ' + role + ' thành công!' });
 });
 
 app.get('/api/logout', (req, res) => {

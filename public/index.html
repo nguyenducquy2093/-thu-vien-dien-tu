@@ -197,7 +197,6 @@ header h1{font-size:18px}
 <div class="modal-body">
 <div class="form-group"><label>Tên đăng nhập</label><input type="text" id="regUsername" placeholder="Chọn tên đăng nhập"></div>
 <div class="form-group"><label>Mật khẩu</label><input type="password" id="regPassword" placeholder="Nhập mật khẩu"></div>
-<div class="form-group"><label>Vai trò</label><select id="regRole"><option value="Sinh viên">Sinh viên</option><option value="Giảng viên">Giảng viên</option></select></div>
 <button class="form-submit" onclick="doRegister()">Đăng ký</button>
 </div></div></div>
 
@@ -257,7 +256,7 @@ function closeRegisterModal(){document.getElementById('registerModal').classList
 
 async function doLogin(){var u=document.getElementById('loginUsername').value.trim();var p=document.getElementById('loginPassword').value;if(!u||!p)return showToast('Vui lòng nhập đầy đủ thông tin',true);try{var d=await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});currentUser=d.user;closeLoginModal();updateAuthUI();showToast('Đăng nhập thành công: '+d.user.username);renderHome()}catch(e){showToast(e.message,true)}}
 
-async function doRegister(){var u=document.getElementById('regUsername').value.trim();var p=document.getElementById('regPassword').value;var r=document.getElementById('regRole').value;if(!u||!p)return showToast('Vui lòng nhập đầy đủ thông tin',true);if(u.length<3)return showToast('Tên đăng nhập ít nhất 3 ký tự',true);if(p.length<4)return showToast('Mật khẩu ít nhất 4 ký tự',true);try{await api('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,role:r})});closeRegisterModal();showToast('Đăng ký thành công! Vui lòng đăng nhập.')}catch(e){showToast(e.message,true)}}
+async function doRegister(){var u=document.getElementById('regUsername').value.trim();var p=document.getElementById('regPassword').value;if(!u||!p)return showToast('Vui lòng nhập đầy đủ thông tin',true);if(u.length<3)return showToast('Tên đăng nhập ít nhất 3 ký tự',true);if(p.length<4)return showToast('Mật khẩu ít nhất 4 ký tự',true);try{await api('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});closeRegisterModal();showToast('Đăng ký thành công! Vui lòng đăng nhập.')}catch(e){showToast(e.message,true)}}
 
 async function logout(){try{await api('/api/logout')}catch(e){}currentUser=null;updateAuthUI();showToast('Đã đăng xuất');renderHome()}
 
